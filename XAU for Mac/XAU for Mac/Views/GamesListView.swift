@@ -123,16 +123,22 @@ struct GameCard: View {
                     .lineLimit(1)
                 
                 HStack {
-                    Text("\(game.achievement.currentGamerscore) / \(game.achievement.totalGamerscore) G")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("\(Int(Double(game.achievement.currentGamerscore) / Double(max(1, game.achievement.totalGamerscore)) * 100))%")
-                        .font(.system(size: 10, weight: .heavy))
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(Color.accentColor.opacity(0.15))
-                        .cornerRadius(3)
+                    if let stats = game.achievement {
+                        Text("\(stats.currentGamerscore) / \(stats.totalGamerscore) G")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("\(Int(Double(stats.currentGamerscore) / Double(max(1, stats.totalGamerscore)) * 100))%")
+                            .font(.system(size: 10, weight: .heavy))
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.15))
+                            .cornerRadius(3)
+                    } else {
+                        Text("No stats available")
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             .padding(10)

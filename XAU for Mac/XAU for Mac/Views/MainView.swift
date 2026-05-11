@@ -7,6 +7,7 @@ struct MainView: View {
     enum NavigationItem: Hashable {
         case home
         case games
+        case misc
         case settings
     }
     
@@ -18,6 +19,9 @@ struct MainView: View {
                 }
                 NavigationLink(value: NavigationItem.games) {
                     Label("Games", systemImage: "gamecontroller")
+                }
+                NavigationLink(value: NavigationItem.misc) {
+                    Label("Title ID Search", systemImage: "magnifyingglass")
                 }
                 
                 Divider()
@@ -37,6 +41,8 @@ struct MainView: View {
                         HomeView()
                     case .games:
                         GamesListView()
+                    case .misc:
+                        TitleSearchView()
                     case .settings:
                         SettingsView()
                     case .none:

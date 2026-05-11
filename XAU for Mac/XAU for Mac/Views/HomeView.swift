@@ -7,130 +7,162 @@ struct HomeView: View {
     
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 30) {
+            VStack(spacing: 24) {
                 if let person = profile {
-                    // Profile Card
-                    HStack(spacing: 24) {
+                    // Profile Header
+                    VStack(spacing: 16) {
                         AsyncImage(url: URL(string: person.displayPicRaw?.replacingOccurrences(of: "&mode=Padding", with: "") ?? "")) { image in
                             image.resizable()
                         } placeholder: {
                             Circle().fill(Color.secondary.opacity(0.2))
                         }
-                        .frame(width: 90, height: 90)
+                        .frame(width: 120, height: 120)
                         .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.primary.opacity(0.05), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
                         
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(spacing: 4) {
                             Text(person.gamertag)
-                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .font(.system(size: 24, weight: .bold))
                             
-                            Text("XUID: \(person.xuid)")
-                                .font(.system(.subheadline, design: .monospaced))
-                                .foregroundColor(.secondary)
-                            
-                            HStack(spacing: 6) {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color.primary.opacity(0.1))
-                                        .frame(width: 18, height: 18)
-                                    Text("G")
-                                        .font(.system(size: 11, weight: .black))
-                                }
+                            HStack(spacing: 8) {
+                                Text("G")
+                                    .font(.system(size: 12, weight: .black))
+                                    .padding(4)
+                                    .background(Circle().fill(Color.primary.opacity(0.1)))
                                 
                                 Text(person.gamerScore)
-                                    .font(.system(.title3, design: .rounded))
-                                    .fontWeight(.bold)
+                                    .font(.headline)
                                     .foregroundColor(.primary)
                             }
-                            .padding(.top, 4)
                         }
-                        
-                        Spacer()
                     }
-                    .padding(24)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color(NSColor.controlBackgroundColor).opacity(0.5))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.primary.opacity(0.1), lineWidth: 1)
-                    )
+                    .padding(.top, 20)
                     
-                    // Quick Stats Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("ACCOUNT STATUS")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.secondary)
-                            .padding(.leading, 4)
-                        
-                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            StatCard(title: "Status", value: "Connected", icon: "antenna.radiowaves.left.and.right", color: .green)
-                            StatCard(title: "Service", value: "Xbox Live", icon: "server.rack", color: .blue)
-                            StatCard(title: "Protocol", value: "XBL 3.0", icon: "shield.authconfig", color: .purple)
-                            StatCard(title: "Sandbox", value: "RETAIL", icon: "cube.box", color: .orange)
+                    // Profile Details Group
+                    GroupBox(label: Label("Account Details", systemImage: "person.text.rectangle")) {
+                        VStack(spacing: 12) {
+                            DetailRow(label: "XUID", value: person.xuid)
+                            Divider()
+                            DetailRow(label: "Reputation", value: person.xboxOneRep ?? "GoodPlayer")
+                            Divider()
+                            DetailRow(label: "Account Tier", value: person.accountTier ?? "Silver")
+                            Divider()
+                            DetailRow(label: "Location", value: person.location ?? "Not Set")
+                            Divider()
+                            DetailRow(label: "Tenure", value: person.tenure ?? "0")
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    // Activity & Social Group
+                    GroupBox(label: Label("Activity", systemImage: "chart.bar.fill")) {
+                        VStack(spacing: 12) {
+                            DetailRow(label: "Currently Playing", value: person.presenceText ?? "None")
+                            Divider()
+                            DetailRow(label: "Active Device", value: person.presenceDevice ?? "Unknown")
+                            Divider()
+                            HStack {
+                                DetailRow(label: "Followers", value: "\(person.followerCount ?? 0)")
+                                Spacer(minLength: 40)
+                                DetailRow(label: "Following", value: "\(person.followingCount ?? 0)")
+                            }
+                            Divider()
+                            DetailRow(label: "Verified", value: person.isVerified == true ? "Yes" : "No")
+                        }
+                        .padding(.vertical, 8)
+                    }
+                    
+                    if let bio = person.bio, !bio.isEmpty {
+                        GroupBox(label: Label("Bio", systemImage: "quote.bubble")) {
+                            Text(bio)
+                                .font(.body)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.vertical, 4)
                         }
                     }
+                    
                 } else if isLoading {
                     VStack {
-                        Spacer()
                         ProgressView()
                             .controlSize(.large)
-                        Spacer()
+                        Text("Loading Profile...")
+                            .foregroundColor(.secondary)
+                            .padding(.top)
                     }
-                    .frame(maxWidth: .infinity, minHeight: 300)
+                    .frame(maxWidth: .infinity, minHeight: 400)
                 } else {
-                    ContentUnavailableView("Profile Not Found", systemImage: "person.crop.circle.badge.exclamationmark", description: Text("Please ensure your token is valid."))
+                    ContentUnavailableView {
+                        Label("Profile Not Found", systemImage: "person.crop.circle.badge.exclamationmark")
+                    } description: {
+                        Text("Please ensure your token is valid and refresh.")
+                    } actions: {
+                        Button("Retry") {
+                            Task { await refreshProfile(force: true) }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                    .frame(minHeight: 400)
                 }
             }
-            .padding(30)
+            .padding(32)
+            .frame(maxWidth: 800)
+            .frame(maxWidth: .infinity)
         }
         .background(Color(NSColor.windowBackgroundColor))
         .navigationTitle("Profile")
-        .task {
-            if let xuid = xboxService.xuid {
-                isLoading = true
-                do {
-                    let result = try await xboxService.fetchProfile(xuid: xuid)
-                    profile = result.people.first
-                } catch {
-                    print("Error fetching profile: \(error)")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: {
+                    Task { await refreshProfile(force: true) }
+                }) {
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
-                isLoading = false
+                .help("Refresh profile information")
             }
+        }
+        .task {
+            await refreshProfile()
+        }
+    }
+    
+    private func refreshProfile(force: Bool = false) async {
+        if let xuid = xboxService.xuid {
+            // If we have cache and aren't forcing, load it instantly without spinner
+            if !force, let cached = xboxService.profileCache {
+                self.profile = cached
+                return
+            }
+            
+            // Only show spinner if we don't have data yet or are forcing a refresh
+            if profile == nil || force {
+                isLoading = true
+            }
+            
+            do {
+                let result = try await xboxService.fetchProfile(xuid: xuid, forceRefresh: force)
+                profile = result.people.first
+            } catch {
+                print("Error fetching profile: \(error)")
+            }
+            isLoading = false
         }
     }
 }
 
-struct StatCard: View {
-    let title: String
+struct DetailRow: View {
+    let label: String
     let value: String
-    let icon: String
-    let color: Color
     
     var body: some View {
-        HStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.15))
-                    .frame(width: 38, height: 38)
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                    .font(.system(size: 18, weight: .semibold))
-            }
-            
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
-                Text(value)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.primary)
-            }
+        HStack {
+            Text(label)
+                .foregroundColor(.secondary)
+                .font(.subheadline)
             Spacer()
+            Text(value)
+                .font(.body)
+                .foregroundColor(.primary)
+                .textSelection(.enabled)
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(NSColor.controlBackgroundColor).opacity(0.5)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.primary.opacity(0.08), lineWidth: 1))
     }
 }

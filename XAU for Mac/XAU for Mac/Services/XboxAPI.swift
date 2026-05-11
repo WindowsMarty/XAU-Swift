@@ -18,6 +18,7 @@ struct XboxAPI {
         static let achievements360 = "https://\(Hosts.achievements)/users/xuid(%@)/titleachievements?titleId=%@&maxItems=1000"
         static let updateAchievements = "https://\(Hosts.achievements)/users/xuid(%@)/achievements/%@/update"
         static let heartbeat = "https://presence-heartbeat.xboxlive.com/users/xuid(%@)/devices/current/"
+        static let search = "https://catalog-search.xboxlive.com/titles/search?q=%@"
     }
     
     struct Auth {
